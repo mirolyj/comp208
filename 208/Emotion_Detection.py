@@ -138,39 +138,10 @@ def usr_get_photo():
             cv2.putText(img, emo+sug, (x + 2, y + h - 2), cv2.FONT_HERSHEY_SIMPLEX,
                         www_s, (0, 255, 0), thickness=www, lineType=1)
             cv2.imshow("prediction",img)
-        #tk.messagebox.showinfo(title='suggestion)', message=sug)
             os.remove("./face.png")
 
-    #     # print('face at:', x, y, w, h)
-    #     t_size = 2
-    #     ww = int(spb[0] * t_size / 300)
-    #     www = int((w + 10) * t_size / 100)
-    #     www_s = int((w + 20) * t_size / 100) * 2 / 5
-    #     cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), ww)
-    #     print("111")
-
-    # image_result = tk.PhotoImage(file='emotion_detection.png')
-    # imageResult = canvas.create_image(0, 0, anchor='nw', image=image_result)
-    # canvas.pack(side='top')
-
-
-    #label2.destroy()
-    # window_result = tk.Tk()
-    # window_result.title('Result and suggestion')
-    #
-    # ##窗口尺寸
-    # window_result.geometry('800x800')
-    #
-    # ##显示出来
-    # window_result.mainloop()
-    #
-    # canvas_ = tk.Canvas(window_result, height=480, width=640)  # 创建画布
-    # image_result = tk.PhotoImage(file='face.png')  # 加载图片文件
-    # imageR = canvas_.create_image(0, 0, anchor='n', image=image_result)  # 将图片置于画布上
-    # canvas_.pack(side='top')  # 放置画布（为上端）
-
+    
 def face_detect(image_path):
-    # rootPath='E:\Python\Opencv\opencv\sources\data\haarcascades\\'
     cascPath = './haarcascade_frontalface_alt.xml'
 
     faceCasccade = cv2.CascadeClassifier(cascPath)
