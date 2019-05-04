@@ -38,35 +38,28 @@ def video_loop():
         window_det.after(1, video_loop)
 def predict_emotion(face_img):
     img_size = 48
-    face_img = face_img * (1. / 255)
-    img_resized = cv2.resize(face_img, (img_size, img_size))
-    rsz_img = []
-    rsh_img = []
+    face_img = face_img / 255.0
+    face_img = cv2.resize(face_img, (img_size, img_size))
+    #creat a list to store the img
+    img_resize = []
     results = []
-    # print (len(resized_img[0]),type(resized_img))
-    rsz_img.append(img_resized[:, :])  # resized_img[1:46,1:46]
-    rsz_img.append(img_resized[2:45, :])
-    rsz_img.append(cv2.flip(rsz_img[0], 1))
+    img_resize.append(face_img)  
+    img_resize.append(face_img[2:45, :])
+    img_resize.append(face_img[3:45, :])
+    img_resize.append(face_img[0:44, :])
+    for i in range(0,len(img_resize)):
+        img_resize.append(cv2.flip(img_resize[i],1))
     # rsz_img.append(cv2.flip(rsz_img[1],1))
 
-    '''rsz_img.append(resized_img[0:45,0:45])
-    rsz_img.append(resized_img[2:47,0:45])
-    rsz_img.append(resized_img[2:47,2:47])
-    rsz_img.append(cv2.flip(rsz_img[2],1))
-    rsz_img.append(cv2.flip(rsz_img[3],1))
-    rsz_img.append(cv2.flip(rsz_img[4],1))'''
     i = 0
-    for rsz_image in rsz_img:
-        rsz_img[i] = cv2.resize(rsz_image, (img_size, img_size))
-        # =========================
-        # cv2.imshow('%d'%i,rsz_img[i])
+    for img in img_resize:
+        img_resize[i] = cv2.resize(img, (img_size, img_size))
+        #resize it to 1,48,48,1 each image
+        img_resize[i] = img_resize[i].reshape(1,img_size,img_size,1)        
         i += 1
-    # why 4 parameters here, what's it means?
-    for rsz_image in rsz_img:
-        rsh_img.append(rsz_image.reshape(1, img_size, img_size, 1))
     i = 0
-    for rsh_image in rsh_img:
-        list_of_list = model.predict_proba(rsh_image, batch_size=32, verbose=1)  # predict
+    for img in img_resize:
+        list_of_list = model.predict_proba(img, batch_size=32, verbose=1)  # predict
         result = [prob for lst in list_of_list for prob in lst]
         results.append(result)
     return results
@@ -79,25 +72,13 @@ def usr_get_photo():
     # cv2.destroyAllWindows()
     bm1 = PhotoImage(file='face.png')
     label1.configure(image=bm1)
-    image_result = cv2.imread('./face.png',0)
-    #image_show = cv2.imshow('image1', image_result)
     faces, img_gray, img = face_detect("./face.png")
-    #spb = img.shape
-    #sp = img_gray.shape
-    #height = sp[0]
-    #width = sp[1]
-    #ize = 600
-    #image_show1 = cv2.imshow('image2', faces)
     if len(faces) == 0:
         tk.messagebox.showinfo(title='Reminder', message='The face was not been detected')
         os.remove("./face.png")
     else:
         for (x, y, w, h) in faces:
             spb = img.shape
-            sp = img_gray.shape
-            height = sp[0]
-            width = sp[1]
-            size = 600
             #cut the part of face
             face_img_gray = img_gray[y:y + h, x:x + w]
             #predict the result
@@ -105,14 +86,13 @@ def usr_get_photo():
             result_sum = np.array([0] * num_class)
             for result in results:
                 result_sum = result_sum + np.array(result)
-                print(result)
-            t_size = 2
-            ww = int(spb[0] * t_size / 400)
+            size = 1
+            thick = int(spb[0] * size / 400)
             angry, disgust, fear, happy, sad, surprise, neutral = result_sum
             print('angry:', angry, 'disgust:', disgust, ' fear:', fear, ' happy:', happy, ' sad:', sad,
                   ' surprise:', surprise, ' neutral:', neutral)
-            label = np.argmax(result_sum)
-            emo = emotion_labels[label]
+            emo_result = np.argmax(result_sum)
+            emo = emotion_labels[emo_result]
             emo = str(emo)
             print('Emotion : ', emo)
             sug = ""
@@ -131,14 +111,15 @@ def usr_get_photo():
             elif emo == 'neutral':
                 sug = sug + (' Still waters run deep.')
 
-            www = int((w + 10) * t_size / 200)
-            #www_s = int((w + 20) * t_size / 100) * 2 / 5
+            thick_1 = int((w + 10) * size / 200)
             www_s = 0.5
-            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), ww)
+            cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), thick)
             cv2.putText(img, emo+sug, (x + 2, y + h - 2), cv2.FONT_HERSHEY_SIMPLEX,
-                        www_s, (0, 255, 0), thickness=www, lineType=1)
+                        www_s, (0, 255, 0), thickness=thick_1, lineType=1)
             cv2.imshow("prediction",img)
+            #delete the img when everything is finished
             os.remove("./face.png")
+            
 
     
 def face_detect(image_path):
@@ -147,7 +128,6 @@ def face_detect(image_path):
     faceCasccade = cv2.CascadeClassifier(cascPath)
 
     # load the img and convert it to bgrgray
-    # img_path=image_path
     img = cv2.imread(image_path)
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
@@ -156,10 +136,9 @@ def face_detect(image_path):
         img_gray,
         scaleFactor=1.1,
         minNeighbors=1,
-        minSize=(30, 30),
+        minSize=(40, 40),
         flags=cv2.CASCADE_SCALE_IMAGE
     )
-    # print('img_gray:',type(img_gray))
     return faces, img_gray, img
 
 def usr_exit():
